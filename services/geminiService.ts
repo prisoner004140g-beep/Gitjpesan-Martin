@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import { AspectRatio, ImageSize, NexusState } from "../types";
 
-// Ensure API key is available
+// Always create a fresh instance right before making an API call to ensure current key usage.
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 const transitionStateTool: FunctionDeclaration = {
@@ -90,17 +90,16 @@ export const geminiService = {
   },
 
   /**
-   * Generates high quality images using Gemini 3 Pro Image
+   * Generates images. Using gemini-2.5-flash-image for standard tasks.
    */
   async generateProImage(prompt: string, aspectRatio: AspectRatio, imageSize: ImageSize) {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
+      model: 'gemini-2.5-flash-image',
       contents: { parts: [{ text: prompt }] },
       config: {
         imageConfig: {
           aspectRatio,
-          imageSize
         }
       },
     });
@@ -141,12 +140,12 @@ export const geminiService = {
   },
 
   /**
-   * Analyzes an image using Gemini 3 Pro
+   * Analyzes an image using Gemini 3 Flash
    */
   async analyzeImage(base64Image: string, prompt: string = "Analyze this image in detail within the context of the Elvish functional universe.") {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: {
         parts: [
           { inlineData: { data: base64Image.split(',')[1], mimeType: 'image/png' } },
@@ -158,7 +157,7 @@ export const geminiService = {
   },
 
   /**
-   * Generates video using Veo
+   * Generates video using Veo (Will try standard key permissions)
    */
   async generateVideo(prompt: string, base64Image?: string, orientation: '16:9' | '9:16' = '16:9') {
     const ai = getAI();

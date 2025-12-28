@@ -6,19 +6,24 @@ import { MediaHub } from './components/MediaHub';
 import { ThinkingSurface } from './components/ThinkingSurface';
 import { CognitiveIndex } from './components/CognitiveIndex';
 import { TaskManifest } from './components/TaskManifest';
+import { SubstrateConfig } from './components/SubstrateConfig';
 import { NexusState, ElvishValue, MediaArtifact, AspectRatio, ImageSize, GraphNode, GraphEdge, TaskLog } from './types';
 import { geminiService } from './services/geminiService';
 import { LiveCognition } from './services/liveService';
 
 const App: React.FC = () => {
   const [activeState, setActiveState] = useState<NexusState>(NexusState.LEARN);
-  const [viewMode, setViewMode] = useState<'artifacts' | 'index' | 'tasks'>('artifacts');
+  const [viewMode, setViewMode] = useState<'artifacts' | 'index' | 'tasks' | 'config'>('artifacts');
   const [selectedDocId, setSelectedDocId] = useState<number | undefined>(undefined);
   const [logs, setLogs] = useState<ElvishValue[]>([]);
   const [artifacts, setArtifacts] = useState<MediaArtifact[]>([]);
   const [tasks, setTasks] = useState<TaskLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [executingTaskName, setExecutingTaskName] = useState<string | undefined>(undefined);
+  
+  // System Dynamics (Physics)
+  const [viscosity, setViscosity] = useState(0.1);
+  const [aberration, setAberration] = useState(0.0);
   
   // Live session state
   const [isLive, setIsLive] = useState(false);
@@ -39,6 +44,7 @@ const App: React.FC = () => {
       { id: 'debug', label: 'DEBUG', type: 'state', x: 300, y: 350, color: '#f87171' },
       { id: 'refactor', label: 'REFACTOR', type: 'state', x: 550, y: 350, color: '#c084fc' },
       { id: 'explore', label: 'EXPLORE', type: 'state', x: 100, y: 400, color: '#22d3ee' },
+      { id: 'archive', label: 'ARCHIVE', type: 'state', x: 650, y: 100, color: '#64748b' },
     ];
     setNodes(initialNodes);
     setEdges([
@@ -47,8 +53,18 @@ const App: React.FC = () => {
       { from: 'debug', to: 'learn' },
       { from: 'build', to: 'refactor' },
       { from: 'learn', to: 'explore' },
+      { from: 'explore', to: 'archive' },
     ]);
   }, []);
+
+  // Update physics based on system load
+  useEffect(() => {
+    let targetViscosity = 0.1;
+    if (isLoading) targetViscosity += 0.4;
+    if (activeState === NexusState.BUILD) targetViscosity += 0.2;
+    if (activeState === NexusState.DEBUG) targetViscosity += 0.3;
+    setViscosity(Math.min(0.95, targetViscosity));
+  }, [isLoading, activeState]);
 
   const addLog = useCallback((type: ElvishValue['type'], content: any) => {
     setLogs(prev => [...prev, { type, content, timestamp: Date.now() }]);
@@ -67,16 +83,27 @@ const App: React.FC = () => {
     setEdges(prev => [...prev, { from: activeState, to: artifact.id }]);
   };
 
+  const handleError = (err: any) => {
+    const msg = err.message || 'System error';
+    setAberration(0.85);
+    setTimeout(() => setAberration(0), 2000);
+    addLog('string', `[ERROR:RETINA_FAULT] ${msg}`);
+  };
+
   const handleToolCall = async (fc: any) => {
-    if (fc.name === 'transition_state') {
-      const { targetState, reason } = fc.args;
-      addLog('agent-proposal', { targetState, reason });
-      return `Transition to ${targetState} proposed. Reason: ${reason}`;
-    }
-    if (fc.name === 'propose_elvish_logic') {
-      const { logic, intent } = fc.args;
-      addLog('logic-proposal', { logic, intent });
-      return `Functional logic proposed: ${intent}`;
+    try {
+      if (fc.name === 'transition_state') {
+        const { targetState, reason } = fc.args;
+        addLog('agent-proposal', { targetState, reason });
+        return `Transition to ${targetState} proposed. Reason: ${reason}`;
+      }
+      if (fc.name === 'propose_elvish_logic') {
+        const { logic, intent } = fc.args;
+        addLog('logic-proposal', { logic, intent });
+        return `Functional logic proposed: ${intent}`;
+      }
+    } catch (err) {
+      handleError(err);
     }
     return "Unknown tool invoked.";
   };
@@ -86,9 +113,7 @@ const App: React.FC = () => {
     const newTask: TaskLog = { id, recipe, status: 'running', timestamp: Date.now() };
     setTasks(prev => [newTask, ...prev]);
     setExecutingTaskName(recipe);
-    
     await new Promise(resolve => setTimeout(resolve, 2200));
-    
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'completed', output: `SUCCESS: recipe ${recipe} executed in 2.1s` } : t));
     setExecutingTaskName(undefined);
   };
@@ -115,7 +140,7 @@ const App: React.FC = () => {
         addLog('system', 'Cognitive agent co-habiting functional substrate.');
       } catch (err) {
         setIsLive(false);
-        addLog('string', '[FATAL:BRIDGE] Session establishment failed.');
+        handleError(err);
       }
     }
   };
@@ -132,11 +157,15 @@ const App: React.FC = () => {
         return;
       }
     }
+    
+    if (cmd.startsWith('just ')) {
+      await simulateJustTask(cmd.replace('just ', ''));
+      return;
+    }
 
     setIsLoading(true);
     try {
       const response = await geminiService.cognitiveReasoning(cmd, activeState);
-      
       if (response.candidates?.[0]?.content?.parts) {
         for (const part of response.candidates[0].content.parts) {
           if (part.functionCall) {
@@ -144,7 +173,6 @@ const App: React.FC = () => {
           }
         }
       }
-
       const text = response.text;
       if (text) {
         if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
@@ -158,7 +186,7 @@ const App: React.FC = () => {
         }
       }
     } catch (err: any) {
-      addLog('string', `[ERROR:BRAIN] ${err.message || 'Logic evaluation failed'}`);
+      handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -180,46 +208,78 @@ const App: React.FC = () => {
       updateGraphWithArtifact(newArtifact);
       addLog('map', { artifact: 'materialized', id: newArtifact.id });
     } catch (err: any) {
-      addLog('string', `[ERROR:PRO_GEN] ${err.message}`);
+      handleError(err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleNodeClick = (nodeId: string) => {
+    // If it's a state node, switch to that state
+    if (Object.values(NexusState).includes(nodeId as NexusState)) {
+      handleCommand(`enter ${nodeId}`);
+      return;
+    }
+    // If it's an artifact node, switch view and focus it
+    const artifact = artifacts.find(a => a.id === nodeId);
+    if (artifact) {
+      setViewMode('artifacts');
+      // Potential selectedArtifact logic could go here if exposed
+    }
+  };
+
+  const renderLeftPanel = () => {
+    switch (viewMode) {
+      case 'index':
+        return <CognitiveIndex 
+                 selectedId={selectedDocId} 
+                 onSelect={setSelectedDocId} 
+                 onExecuteVerb={(cmd) => {
+                   handleCommand(cmd);
+                   // Switch to tasks view if it's a "just" command to bring execution into focus
+                   if (cmd.startsWith('just ')) setViewMode('tasks');
+                 }}
+               />;
+      case 'tasks':
+        return <TaskManifest tasks={tasks} />;
+      case 'config':
+        return <SubstrateConfig />;
+      default:
+        return <MediaHub 
+                 artifacts={artifacts} 
+                 loading={isLoading}
+                 onGenerate={handleGenerate}
+                 onEdit={() => {}} 
+                 onAnimate={() => {}}
+                 onAnalyze={() => {}}
+               />;
     }
   };
 
   return (
     <Layout 
       activeState={activeState} 
-      showIndex={viewMode === 'index'}
-      onToggleIndex={() => setViewMode(viewMode === 'index' ? 'artifacts' : 'index')}
-      onToggleTasks={() => setViewMode(viewMode === 'tasks' ? 'artifacts' : 'tasks')}
-      onStateChange={setActiveState} 
-      onSelectKey={() => window.aistudio.openSelectKey()}
+      viewMode={viewMode}
+      onViewChange={setViewMode}
+      onStateChange={(state) => {
+        setActiveState(state);
+        handleCommand(`enter ${state}`);
+      }}
     >
       <div className="flex h-full">
-        {/* Left Control Plane (The Lens/Hands/Retina) */}
+        {/* Left Control Plane */}
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 overflow-hidden relative">
-            {viewMode === 'index' ? (
-              <CognitiveIndex selectedId={selectedDocId} onSelect={setSelectedDocId} />
-            ) : viewMode === 'tasks' ? (
-              <TaskManifest tasks={tasks} />
-            ) : (
-              <MediaHub 
-                artifacts={artifacts} 
-                loading={isLoading}
-                onGenerate={handleGenerate}
-                onEdit={() => {}} 
-                onAnimate={() => {}}
-                onAnalyze={() => {}}
-              />
-            )}
+            {renderLeftPanel()}
           </div>
-          {/* Retina Layer */}
           <div className="h-72">
             <ThinkingSurface 
               nodes={nodes} 
               edges={edges} 
-              focusNodeId={selectedDocId ? 'learn' : undefined} 
+              focusNodeId={selectedDocId ? 'learn' : activeState} 
+              viscosity={viscosity}
+              aberration={aberration}
+              onNodeClick={handleNodeClick}
             />
           </div>
         </div>

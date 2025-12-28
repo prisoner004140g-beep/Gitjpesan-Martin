@@ -51,20 +51,64 @@ export const STATE_ICONS = {
   [NexusState.ARCHIVE]: <Archive className="w-5 h-5" />,
 };
 
-export const CHAT_INDEX = [
-  { id: 1, title: "Core Vision", description: "Agent‑First Nexus; workspace as state machine." },
-  { id: 2, title: "Workspace Architecture", description: "Immutable source, project projections, meta-tags." },
-  { id: 3, title: "Contexts & States", description: "Learn, Build, Debug, Refactor, Explore, Archive." },
-  { id: 4, title: "Shell & Orchestration", description: "Elvish shell; functional state machines." },
-  { id: 5, title: "Rust Hyper‑Stack", description: "Ratatui, Zellij, ripgrep, fd, bat." },
-  { id: 6, title: "Active Documentation", description: "Executable Markdown via Broot verbs." },
-  { id: 7, title: "AI / Agent Integration", description: "MCP Servers; tool-calling governance." },
-  { id: 8, title: "Gemini CLI Paths", description: "Antigravity native agent manager." },
-  { id: 9, title: "Data & Vector Memory", description: "SQLite+vector; semantic memory ops." },
-  { id: 10, title: "Elvish Patterns", description: "Declarative workflows; lambda orchestrators." },
-  { id: 11, title: "Memory & Epistemics", description: "Org-Mode, SQLite timelines." },
-  { id: 12, title: "Geometry & Theory", description: "Honeycomb lattices, metaspheres, drips." },
-  { id: 13, title: "Governance & Safety", description: "Whitelisted verbs; immutable audit trails." },
-  { id: 14, title: "Hybrid Stack", description: "Elvish + Just + Rust + Ratatui." },
-  { id: 15, title: "Next Deliverables", description: "RC templates, KDL layouts, MCP wrappers." }
+export interface DocItem {
+  id: number;
+  title: string;
+  description: string;
+  verbs: { label: string; cmd: string }[];
+}
+
+export const CHAT_INDEX: DocItem[] = [
+  { 
+    id: 1, 
+    title: "Core Vision", 
+    description: "Agent‑First Nexus; workspace as state machine.",
+    verbs: [
+      { label: "status", cmd: "just nexus-status" },
+      { label: "manifest", cmd: "cat manifest.elv" }
+    ]
+  },
+  { 
+    id: 2, 
+    title: "Workspace Architecture", 
+    description: "Immutable source, project projections, meta-tags.",
+    verbs: [
+      { label: "inspect", cmd: "just arch-check" },
+      { label: "rebuild", cmd: "just workspace-init" }
+    ]
+  },
+  { 
+    id: 3, 
+    title: "Contexts & States", 
+    description: "Learn, Build, Debug, Refactor, Explore, Archive.",
+    verbs: [
+      { label: "cycle", cmd: "just state-cycle" }
+    ]
+  },
+  { 
+    id: 4, 
+    title: "Shell & Orchestration", 
+    description: "Elvish shell; functional state machines.",
+    verbs: [
+      { label: "repl", cmd: "elvish -i" },
+      { label: "eval", cmd: "just elvish-bench" }
+    ]
+  },
+  { 
+    id: 5, 
+    title: "Rust Hyper‑Stack", 
+    description: "Ratatui, Zellij, ripgrep, fd, bat.",
+    verbs: [
+      { label: "tui-bench", cmd: "just ratatui-perf" },
+      { label: "reload", cmd: "just rust-init" }
+    ]
+  },
+  { 
+    id: 6, 
+    title: "Active Documentation", 
+    description: "Executable Markdown via Broot verbs.",
+    verbs: [
+      { label: "exec-all", cmd: "just doc-run-verbs" }
+    ]
+  }
 ];

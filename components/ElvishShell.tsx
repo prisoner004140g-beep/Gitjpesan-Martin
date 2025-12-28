@@ -1,7 +1,24 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ElvishValue, NexusState } from '../types';
-import { Terminal as TerminalIcon, ChevronRight, Hash, Mic, MicOff, Volume2, ArrowRight, Code, Play, CheckCircle2 } from 'lucide-react';
+import { 
+  Terminal as TerminalIcon, 
+  ChevronRight, 
+  Hash, 
+  Mic, 
+  MicOff, 
+  Volume2, 
+  ArrowRight, 
+  Code, 
+  Play, 
+  CheckCircle2, 
+  Command, 
+  Zap, 
+  Bug, 
+  Activity, 
+  Trash2,
+  X
+} from 'lucide-react';
 
 interface ElvishShellProps {
   logs: ElvishValue[];
@@ -13,21 +30,37 @@ interface ElvishShellProps {
   onToggleLive: () => void;
 }
 
+const QUICK_COMMANDS = [
+  { label: 'Nexus Status', cmd: 'just status', icon: <Activity className="w-3 h-3" /> },
+  { label: 'Spine Build', cmd: 'just build', icon: <Zap className="w-3 h-3" /> },
+  { label: 'Flush Artifacts', cmd: 'just clean', icon: <Trash2 className="w-3 h-3" /> },
+  { label: 'Enter Debug', cmd: 'enter debug', icon: <Bug className="w-3 h-3" /> },
+  { label: 'Enter Learn', cmd: 'enter learn', icon: <ArrowRight className="w-3 h-3" /> },
+  { label: 'Enter Build', cmd: 'enter build', icon: <Zap className="w-3 h-3" /> },
+];
+
 export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isLive, liveTranscription, executingTask, onCommand, onToggleLive }) => {
   const [input, setInput] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [logs]);
+  }, [logs, executingTask, liveTranscription]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
     onCommand(input);
     setInput('');
+    setShowMenu(false);
+  };
+
+  const handleQuickCommand = (cmd: string) => {
+    onCommand(cmd);
+    setShowMenu(false);
   };
 
   const renderContent = (val: ElvishValue) => {
@@ -35,7 +68,7 @@ export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isL
       return (
         <div className="grid grid-cols-2 gap-2 mt-1 bg-slate-900/50 p-3 rounded-lg border border-slate-800/50">
           {Object.entries(val.content).map(([k, v]) => (
-            <div key={k} className="flex gap-2">
+            <div key={k} className="flex gap-2 text-[11px]">
               <span className="text-cyan-500 font-bold">&{k}=</span>
               <span className="text-slate-300 truncate">{String(v)}</span>
             </div>
@@ -47,7 +80,7 @@ export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isL
       return (
         <div className="flex flex-wrap gap-2 mt-1">
           {val.content.map((item: any, i: number) => (
-            <span key={i} className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-md border border-indigo-500/20 text-xs">
+            <span key={i} className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-md border border-indigo-500/20 text-[10px] font-mono">
               {String(item)}
             </span>
           ))}
@@ -88,7 +121,7 @@ export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isL
             </code>
             <button 
               onClick={() => onCommand(`enter ${val.content.targetState}`)}
-              className="text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2"
+              className="text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2 whitespace-nowrap"
             >
               <Play className="w-3 h-3" />
               EXECUTE JUST:TASK
@@ -112,7 +145,7 @@ export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isL
             <div className="flex justify-end">
               <button 
                 onClick={() => onCommand(val.content.logic)}
-                className="text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-2"
+                className="text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-2 whitespace-nowrap"
               >
                 <Play className="w-3 h-3" />
                 EVALUATE JUST:RUN
@@ -124,7 +157,7 @@ export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isL
     }
     if (val.type === 'system') {
       return (
-        <div className="flex items-center gap-2 text-emerald-500 mt-1 font-bold">
+        <div className="flex items-center gap-2 text-emerald-500 mt-1 font-bold text-[11px] italic">
           <CheckCircle2 className="w-3 h-3" />
           <span>» {val.content}</span>
         </div>
@@ -134,8 +167,8 @@ export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isL
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/50 backdrop-blur-sm border-l border-slate-800">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/80">
+    <div className="flex flex-col h-full bg-slate-950/50 backdrop-blur-sm border-l border-slate-800 relative">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/80 z-20">
         <div className="flex items-center gap-2">
           <TerminalIcon className="w-4 h-4 text-emerald-500" />
           <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Cognitive REPL (Brain)</span>
@@ -151,13 +184,13 @@ export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isL
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6 mono text-[13px] scroll-smooth">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6 mono text-[13px] scroll-smooth relative z-10">
         {logs.map((log, i) => (
           <div key={i} className="group animate-in fade-in slide-in-from-left-2 duration-300">
             <div className="flex items-center gap-2 mb-1 text-slate-500 text-[10px] uppercase tracking-tighter">
               <span className="font-bold opacity-40">{new Date(log.timestamp).toLocaleTimeString()}</span>
               <span className="opacity-20">/</span>
-              <span className="text-emerald-500/60">{activeState}</span>
+              <span className="text-emerald-500/60 font-bold">{activeState.toUpperCase()}</span>
             </div>
             {renderContent(log)}
           </div>
@@ -194,7 +227,41 @@ export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isL
         )}
       </div>
 
-      <div className="p-4 border-t border-slate-800 bg-slate-900/50 backdrop-blur-md">
+      {/* Command Menu Popover */}
+      {showMenu && (
+        <div className="absolute bottom-24 right-4 left-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-4 overflow-hidden">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
+              <div className="flex items-center gap-2">
+                <Command className="w-4 h-4 text-emerald-400" />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quick Intent Palette</span>
+              </div>
+              <button onClick={() => setShowMenu(false)} className="text-slate-500 hover:text-white transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {QUICK_COMMANDS.map((cmd, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleQuickCommand(cmd.cmd)}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-emerald-500/30 hover:bg-emerald-500/5 group transition-all text-left"
+                >
+                  <div className="p-2 bg-slate-900 rounded-lg text-slate-500 group-hover:text-emerald-400 transition-colors">
+                    {cmd.icon}
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-300 group-hover:text-emerald-300">{cmd.label}</p>
+                    <p className="text-[9px] text-slate-600 font-mono truncate">{cmd.cmd}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="p-4 border-t border-slate-800 bg-slate-900/50 backdrop-blur-md relative z-20">
         <div className="flex items-center gap-2">
           <button 
             onClick={onToggleLive}
@@ -214,6 +281,14 @@ export const ElvishShell: React.FC<ElvishShellProps> = ({ logs, activeState, isL
               placeholder={`~/${activeState} > inject intent...`}
               className="flex-1 bg-transparent py-3.5 outline-none mono text-slate-200 placeholder:text-slate-700 text-sm"
             />
+            <button 
+              type="button"
+              onClick={() => setShowMenu(!showMenu)}
+              className={`p-2 rounded-lg transition-all ${showMenu ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-600 hover:text-slate-400'}`}
+              title="Toggle Command Menu"
+            >
+              <Command className="w-4 h-4" />
+            </button>
           </form>
         </div>
       </div>

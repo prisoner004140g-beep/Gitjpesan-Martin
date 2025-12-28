@@ -1,14 +1,15 @@
 
 import React from 'react';
-import { CHAT_INDEX } from '../constants';
-import { FolderTree, FileCode, ChevronRight, Binary, Terminal, Activity } from 'lucide-react';
+import { CHAT_INDEX, DocItem } from '../constants';
+import { FolderTree, FileCode, ChevronRight, Binary, Terminal, Activity, Play } from 'lucide-react';
 
 interface CognitiveIndexProps {
   selectedId?: number;
   onSelect: (id: number) => void;
+  onExecuteVerb: (cmd: string) => void;
 }
 
-export const CognitiveIndex: React.FC<CognitiveIndexProps> = ({ selectedId, onSelect }) => {
+export const CognitiveIndex: React.FC<CognitiveIndexProps> = ({ selectedId, onSelect, onExecuteVerb }) => {
   return (
     <div className="h-full flex flex-col p-6 space-y-4 overflow-hidden bg-slate-950/40 backdrop-blur-xl border-r border-slate-800">
       <div className="flex items-center justify-between mb-4">
@@ -31,14 +32,16 @@ export const CognitiveIndex: React.FC<CognitiveIndexProps> = ({ selectedId, onSe
         {CHAT_INDEX.map((item, idx) => (
           <div 
             key={item.id} 
-            onClick={() => onSelect(item.id)}
-            className={`group flex flex-col p-2 rounded-lg transition-all border cursor-pointer ${
+            className={`group flex flex-col p-2 rounded-lg transition-all border ${
               selectedId === item.id 
               ? 'bg-emerald-500/10 border-emerald-500/30' 
               : 'border-transparent hover:bg-emerald-500/5 hover:border-emerald-500/10'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div 
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => onSelect(item.id)}
+            >
               <span className="text-slate-600">│</span>
               <span className="text-slate-600">{idx === CHAT_INDEX.length - 1 ? '└─' : '├─'}</span>
               <FileCode className={`w-4 h-4 ${selectedId === item.id ? 'text-emerald-400' : (idx % 2 === 0 ? 'text-emerald-500' : 'text-indigo-400')} opacity-70 group-hover:opacity-100`} />
@@ -46,11 +49,27 @@ export const CognitiveIndex: React.FC<CognitiveIndexProps> = ({ selectedId, onSe
                 {item.id.toString().padStart(2, '0')}_{item.title.toLowerCase().replace(/ /g, '_')}.elv
               </span>
               {selectedId === item.id && <Activity className="w-3 h-3 text-emerald-400 animate-pulse ml-auto" />}
-              <ChevronRight className="w-3 h-3 text-slate-700 ml-auto group-hover:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all" />
             </div>
-            <div className={`ml-10 text-[10px] text-slate-500 transition-all overflow-hidden ${selectedId === item.id ? 'h-auto mt-1 opacity-100' : 'h-0 opacity-0 group-hover:h-auto group-hover:opacity-100'}`}>
-              <span className="text-emerald-500/50 mr-2">#</span>
-              {item.description}
+
+            <div className={`ml-10 transition-all overflow-hidden ${selectedId === item.id ? 'max-h-40 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+              <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
+                <span className="text-emerald-500/50 mr-2">#</span>
+                {item.description}
+              </p>
+              
+              {/* Active Documentation Verbs */}
+              <div className="flex flex-wrap gap-2 pb-2">
+                {item.verbs.map((verb, vidx) => (
+                  <button
+                    key={vidx}
+                    onClick={() => onExecuteVerb(verb.cmd)}
+                    className="flex items-center gap-1.5 px-2 py-1 bg-slate-900 hover:bg-emerald-500/20 text-[9px] font-bold text-slate-400 hover:text-emerald-400 rounded border border-slate-800 hover:border-emerald-500/30 transition-all"
+                  >
+                    <Play className="w-2.5 h-2.5" />
+                    {verb.label.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         ))}
@@ -61,10 +80,10 @@ export const CognitiveIndex: React.FC<CognitiveIndexProps> = ({ selectedId, onSe
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <div className="flex-1">
             <div className="flex items-center justify-between text-[9px] uppercase font-bold text-slate-500 mb-1">
-              <span>Bridge Status: MCP Active</span>
+              <span>Bridge Status: Active</span>
               <Terminal className="w-3 h-3" />
             </div>
-            <p className="text-[10px] text-slate-400 truncate mono">gemini-3-flash: Index mapped to latent space.</p>
+            <p className="text-[10px] text-slate-400 truncate mono">gemini-3-flash: Indexing functional universe.</p>
           </div>
         </div>
       </div>

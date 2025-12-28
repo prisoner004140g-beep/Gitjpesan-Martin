@@ -2,19 +2,17 @@
 import React from 'react';
 import { NexusState, StateConfig } from '../types';
 import { STATES, STATE_ICONS } from '../constants';
-import { Box, Globe, Shield, Settings, Key, Layers, Hammer } from 'lucide-react';
+import { Box, Shield, Settings, Layers, Hammer } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
   activeState: NexusState;
-  showIndex: boolean;
-  onToggleIndex: () => void;
-  onToggleTasks: () => void;
+  viewMode: 'artifacts' | 'index' | 'tasks' | 'config';
+  onViewChange: (view: 'artifacts' | 'index' | 'tasks' | 'config') => void;
   onStateChange: (state: NexusState) => void;
-  onSelectKey: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, activeState, showIndex, onToggleIndex, onToggleTasks, onStateChange, onSelectKey }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, activeState, viewMode, onViewChange, onStateChange }) => {
   return (
     <div className="flex h-screen bg-slate-950 overflow-hidden text-slate-200">
       {/* Sidebar */}
@@ -38,10 +36,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeState, showIndex
                 : 'hover:bg-white/5 text-slate-400'
               }`}
             >
-              <span className={activeState === state.name ? state.color : 'text-slate-500'}>
+              <span className={activeState === state.name ? state.color : 'text-slate-500 group-hover:text-slate-300'}>
                 {STATE_ICONS[state.name]}
               </span>
-              <div className="hidden md:flex flex-col items-start leading-tight">
+              <div className="hidden md:flex flex-col items-start leading-tight text-left">
                 <span className="capitalize font-medium text-sm">{state.name}</span>
                 <span className="text-[10px] opacity-60 font-mono tracking-tighter">[{state.agents}]</span>
               </div>
@@ -51,38 +49,44 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeState, showIndex
           <div className="pt-6">
              <p className="hidden md:block text-[10px] font-bold text-slate-500 px-3 uppercase tracking-widest mb-2">The Layers</p>
              <button 
-               onClick={onToggleIndex}
-               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${showIndex ? 'bg-emerald-500/10 text-emerald-400' : 'hover:bg-white/5 text-slate-400'}`}
+               onClick={() => onViewChange('index')}
+               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${viewMode === 'index' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'hover:bg-white/5 text-slate-400'}`}
              >
-               <Layers className={`w-5 h-5 ${showIndex ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-400'}`} />
+               <Layers className={`w-5 h-5 ${viewMode === 'index' ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-400'}`} />
                <span className="hidden md:block text-sm font-medium">The Lens (Index)</span>
              </button>
              <button 
-               onClick={onToggleTasks}
-               className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 text-slate-400 group transition-all"
+               onClick={() => onViewChange('tasks')}
+               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${viewMode === 'tasks' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'hover:bg-white/5 text-slate-400'}`}
              >
-               <Hammer className="w-5 h-5 text-slate-500 group-hover:text-indigo-400" />
+               <Hammer className={`w-5 h-5 ${viewMode === 'tasks' ? 'text-indigo-400' : 'text-slate-500 group-hover:text-indigo-400'}`} />
                <span className="hidden md:block text-sm font-medium">The Hands (Tasks)</span>
              </button>
-             <button className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 text-slate-400 group transition-all">
-               <Box className="w-5 h-5 text-slate-500 group-hover:text-purple-400" />
+             <button 
+               onClick={() => onViewChange('artifacts')}
+               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${viewMode === 'artifacts' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'hover:bg-white/5 text-slate-400'}`}
+             >
+               <Box className={`w-5 h-5 ${viewMode === 'artifacts' ? 'text-purple-400' : 'text-slate-500 group-hover:text-purple-400'}`} />
                <span className="hidden md:block text-sm font-medium">Artifact Storage</span>
+             </button>
+             <button 
+               onClick={() => onViewChange('config')}
+               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${viewMode === 'config' ? 'bg-slate-100/10 text-slate-100 border border-slate-100/20' : 'hover:bg-white/5 text-slate-400'}`}
+             >
+               <Settings className={`w-5 h-5 ${viewMode === 'config' ? 'text-slate-100' : 'text-slate-500 group-hover:text-slate-300'}`} />
+               <span className="hidden md:block text-sm font-medium">Substrate Config</span>
              </button>
           </div>
         </nav>
 
-        <div className="w-full px-3 mt-auto space-y-2">
-          <button 
-            onClick={onSelectKey}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 transition-all group"
-          >
-            <Key className="w-5 h-5" />
-            <span className="hidden md:block text-sm font-medium">Bridge: API Key</span>
-          </button>
-          <button className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 text-slate-400 transition-all">
-            <Settings className="w-5 h-5" />
-            <span className="hidden md:block text-sm font-medium">Substrate Config</span>
-          </button>
+        <div className="w-full px-4 mt-auto">
+          <div className="bg-slate-900 rounded-xl p-3 border border-slate-800">
+             <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Retina Status</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             </div>
+             <p className="text-[10px] text-slate-300 mono truncate">physics_engine::active</p>
+          </div>
         </div>
       </aside>
 
