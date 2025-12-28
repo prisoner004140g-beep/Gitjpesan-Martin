@@ -1,0 +1,8 @@
+{
+  "name": "Nexus: Elvish Cognitive Shell",
+  "description": "A multidimensional, stateful orchestrator using Elvish shell principles and Gemini AI to manage functional workflows, image editing, and video generation.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
